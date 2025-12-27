@@ -1,0 +1,38 @@
+name: Build OpenWrt IPK
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Download OpenWrt SDK
+        run: |
+          wget https://downloads.openwrt.org/releases/23.05.0/targets/x86/64/openwrt-sdk-23.05.0-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          tar -xf openwrt-sdk-23.05.0-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          mv openwrt-sdk-* openwrt-sdk
+
+      - name: Copy package to SDK
+        run: |
+          mkdir -p openwrt-sdk/package/luci-app-connected
+          cp -r . openwrt-sdk/package/luci-app-connected
+
+      - name: Build package
+        run: |
+          cd openwrt-sdk
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+          make package/luci-app-connected/compile V=s
+
+      - name: Upload IPK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipk-packages
+          path: openwrt-sdk/bin/packages/*/*/*.ipk
