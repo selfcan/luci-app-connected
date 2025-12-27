@@ -28,10 +28,27 @@ jobs:
           name: ipk-packages
           path: build_output/*.ipk
 
-      - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: build_output/*.ipk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Publish IPK to GitHub Packages
+        run: |
+          PACKAGE_NAME="luci-app-connected"
+          VERSION="latest"
+          FILE_PATH="build_output/luci-app-connected.ipk"
+
+          # Delete existing 'latest' version if it exists
+          VERSIONS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/packages/generic/$PACKAGE_NAME/versions")
+          VERSION_ID=$(echo "$VERSIONS" | jq -r '.[] | select(.name == "'$VERSION'") | .id')
+          if [ -n "$VERSION_ID" ]; then
+            curl -X DELETE \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/packages/generic/$PACKAGE_NAME/versions/$VERSION_ID"
+          fi
+
+          # Upload new version
+          curl -X PUT \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @"$FILE_PATH" \
+            "https://uploads.github.com/repos/${{ github.repository }}/packages/generic/$PACKAGE_NAME/$VERSION/luci-app-connected.ipk"
