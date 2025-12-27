@@ -28,9 +28,6 @@ jobs:
           name: ipk-packages
           path: build_output/*.ipk
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
       - name: Publish IPK to GitHub Packages
         run: |
           PACKAGE_NAME="luci-app-connected"
@@ -41,16 +38,9 @@ jobs:
           VERSIONS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/packages/generic/$PACKAGE_NAME/versions")
           if echo "$VERSIONS" | jq -e 'type == "array"' > /dev/null 2>&1; then
             VERSION_ID=$(echo "$VERSIONS" | jq -r '.[] | select(.name == "'$VERSION'") | .id')
-            if [ -n "$VERSION_ID" ]; then
-              curl -X DELETE \
-                -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/repos/${{ github.repository }}/packages/generic/$PACKAGE_NAME/versions/$VERSION_ID"
-            fi
-          fi
-
-          # Upload new version
-          curl -X PUT \
+          DATA=$(base64 -w 0 "$FILE_PATH")
+          curl -X POST \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/octet-stream" \
-            --data-binary @"$FILE_PATH" \
-            "https://uploads.github.com/repos/${{ github.repository }}/packages/generic/$PACKAGE_NAME/$VERSION/luci-app-connected.ipk"
+            -H "Content-Type: application/json" \
+            -d "{\"version\": \"$VERSION\", \"files\": [{\"name\": \"luci-app-connected.ipk\", \"content_type\": \"application/octet-stream\", \"data\": \"$DATA\"}]}" \
+            "https://api.github.com/repos/${{ github.repository }}/packages/generic/$PACKAGE_NAME/versions"
