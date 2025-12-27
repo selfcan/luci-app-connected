@@ -1,8 +1,9 @@
-name: Build IPK with ipkg-utils
+name: Build IPK manually
 
 on:
   push:
     branches: [ master ]
+    tags: [ 'v*' ]
   pull_request:
 
 jobs:
@@ -26,3 +27,11 @@ jobs:
         with:
           name: ipk-packages
           path: build_output/*.ipk
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build_output/*.ipk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
