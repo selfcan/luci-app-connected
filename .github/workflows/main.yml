@@ -16,7 +16,11 @@ jobs:
       - name: Install ipkg-utils
         run: |
           sudo apt-get update
-          sudo apt-get install -y ipkg-utils
+          sudo apt-get install -y build-essential wget
+          wget https://downloads.openwrt.org/releases/23.05.0/packages/x86_64/packages/ipkg-utils_1.10.0-1_all.ipk
+          ar x ipkg-utils_1.10.0-1_all.ipk
+          tar -xzf data.tar.gz
+          sudo cp -a ./usr/bin/ipkg-build /usr/local/bin/
 
       - name: Build .ipk package
         run: |
