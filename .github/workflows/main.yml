@@ -17,7 +17,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential git python3
-          git clone https://github.com/openwrt/ipkg-utils.git
+          git clone https://git.openwrt.org/project/ipkg-utils.git
           cd ipkg-utils
           sudo make install
 
