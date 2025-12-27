@@ -14,7 +14,7 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Build .ipk package manually
+      - name: Build .ipk
         run: |
           mkdir -p build_output
           echo "2.0" > debian-binary
@@ -39,11 +39,13 @@ jobs:
 
           # Delete existing 'latest' version if it exists
           VERSIONS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/packages/generic/$PACKAGE_NAME/versions")
-          VERSION_ID=$(echo "$VERSIONS" | jq -r '.[] | select(.name == "'$VERSION'") | .id')
-          if [ -n "$VERSION_ID" ]; then
-            curl -X DELETE \
-              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/${{ github.repository }}/packages/generic/$PACKAGE_NAME/versions/$VERSION_ID"
+          if echo "$VERSIONS" | jq -e 'type == "array"' > /dev/null 2>&1; then
+            VERSION_ID=$(echo "$VERSIONS" | jq -r '.[] | select(.name == "'$VERSION'") | .id')
+            if [ -n "$VERSION_ID" ]; then
+              curl -X DELETE \
+                -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                "https://api.github.com/repos/${{ github.repository }}/packages/generic/$PACKAGE_NAME/versions/$VERSION_ID"
+            fi
           fi
 
           # Upload new version
