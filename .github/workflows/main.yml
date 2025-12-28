@@ -21,7 +21,7 @@ jobs:
         run: |
           mkdir -p build_output
           echo "2.0" > debian-binary
-          tar czf control.tar.gz -C . DEBIAN
+          tar czf control.tar.gz -C DEBIAN .
           tar czf data.tar.gz -C . usr
           ar r build_output/luci-app-connected.ipk debian-binary control.tar.gz data.tar.gz
 
