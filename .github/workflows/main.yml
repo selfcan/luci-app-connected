@@ -1,55 +1,47 @@
-name: Build IPK manually
+name: Build OpenWrt IPK
 
 on:
   push:
-    branches: [ master ]
-    tags: [ 'v*' ]
+    branches:
+      - main
   pull_request:
-
-permissions:
-  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Build .ipk
-        run: |
-          mkdir -p build_output
-          dpkg-deb -b . build_output/luci-app-connected.ipk
+    - name: Cache OpenWrt SDK
+      uses: actions/cache@v3
+      with:
+        path: openwrt-sdk
+        key: ${{ runner.os }}-openwrt-sdk
 
-      - name: Upload IPK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ipk-packages
-          path: build_output/*.ipk
+    - name: Set up OpenWrt SDK
+      run: |
+        if [ ! -d openwrt-sdk ]; then
+          wget https://downloads.openwrt.org/releases/22.03.5/targets/x86/64/openwrt-sdk-22.03.5-x86-64_gcc-11.2.0_musl.Linux-x86_64.tar.xz
+          tar -xf openwrt-sdk-22.03.5-x86-64_gcc-11.2.0_musl.Linux-x86_64.tar.xz
+          mv openwrt-sdk-22.03.5-x86-64_gcc-11.2.0_musl.Linux-x86_64 openwrt-sdk
+        fi
 
-      - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          body: |
-            ## Changes
-            - Latest build of luci-app-connected.ipk
-          files: build_output/*.ipk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Prepare package
+      run: |
+        cp -r ./luci-app-connected openwrt-sdk/package/
+        cd openwrt-sdk
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
 
-      - name: Update Latest Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: latest
-          name: Latest Release
-          body: |
-            ## Latest Build
-            - Auto-updated on every build.
-          files: build_output/*.ipk
-          prerelease: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build IPK
+      run: |
+        cd openwrt-sdk
+        make package/luci-app-connected/compile V=s
+
+    - name: Upload IPK
+      uses: actions/upload-artifact@v3
+      with:
+        name: luci-app-connected
+        path: openwrt-sdk/bin/packages/**/luci-app-connected_*.ipk
