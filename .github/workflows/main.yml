@@ -23,7 +23,7 @@ jobs:
           rm -f debian-binary control.tar.gz data.tar.gz
           echo "2.0" > debian-binary
           tar czf control.tar.gz -C DEBIAN control
-          tar czf data.tar.gz ./usr
+          tar czf data.tar.gz usr
           ar cr build_output/luci-app-connected.ipk debian-binary control.tar.gz data.tar.gz
 
       - name: Upload IPK artifact
