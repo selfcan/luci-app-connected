@@ -28,19 +28,28 @@ jobs:
           name: ipk-packages
           path: build_output/*.ipk
 
-      - name: Publish IPK to GitHub Packages
-        run: |
-          PACKAGE_NAME="luci-app-connected"
-          VERSION="latest"
-          FILE_PATH="build_output/luci-app-connected.ipk"
+- name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## Changes
+            - Latest build of luci-app-connected.ipk
+          files: build_output/*.ipk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          # Delete existing 'latest' version if it exists
-          VERSIONS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/packages/generic/$PACKAGE_NAME/versions")
-          if echo "$VERSIONS" | jq -e 'type == "array"' > /dev/null 2>&1; then
-            VERSION_ID=$(echo "$VERSIONS" | jq -r '.[] | select(.name == "'$VERSION'") | .id')
-          DATA=$(base64 -w 0 "$FILE_PATH")
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"version\": \"$VERSION\", \"files\": [{\"name\": \"luci-app-connected.ipk\", \"content_type\": \"application/octet-stream\", \"data\": \"$DATA\"}]}" \
-            "https://api.github.com/repos/${{ github.repository }}/packages/generic/$PACKAGE_NAME/versions"
+      - name: Update Latest Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: latest
+          name: Latest Release
+          body: |
+            ## Latest Build
+            - Auto-updated on every build.
+          files: build_output/*.ipk
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
