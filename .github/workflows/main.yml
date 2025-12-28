@@ -20,10 +20,11 @@ jobs:
       - name: Build .ipk
         run: |
           mkdir -p build_output
+          rm -f debian-binary control.tar.gz data.tar.gz
           echo "2.0" > debian-binary
           tar czf control.tar.gz -C DEBIAN control
           tar czf data.tar.gz ./usr
-          ar r build_output/luci-app-connected.ipk debian-binary control.tar.gz data.tar.gz
+          ar cr build_output/luci-app-connected.ipk debian-binary control.tar.gz data.tar.gz
 
       - name: Upload IPK artifact
         uses: actions/upload-artifact@v4
