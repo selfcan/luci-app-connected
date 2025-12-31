@@ -18,23 +18,21 @@ jobs:
       uses: actions/cache@v3
       with:
         path: openwrt-sdk
-        key: ${{ runner.os }}-openwrt-sdk
+        key: ${{ runner.os }}-openwrt-sdk-${{ hashFiles('**/Makefile') }}
 
     - name: Set up OpenWrt SDK
       run: |
         if [ ! -d openwrt-sdk ]; then
-          wget https://downloads.openwrt.org/releases/22.03.5/targets/x86/64/openwrt-sdk-22.03.5-x86-64_gcc-11.2.0_musl.Linux-x86_64.tar.xz
-          tar -xf openwrt-sdk-22.03.5-x86-64_gcc-11.2.0_musl.Linux-x86_64.tar.xz
-          mv openwrt-sdk-22.03.5-x86-64_gcc-11.2.0_musl.Linux-x86_64 openwrt-sdk
-          rm openwrt-sdk-22.03.5-x86-64_gcc-11.2.0_musl.Linux-x86_64.tar.xz
+          wget https://downloads.openwrt.org/releases/${{ env.SDK_VERSION }}/targets/x86/64/openwrt-sdk-${{ env.SDK_VERSION }}-x86-64_gcc-11.2.0_musl.Linux-x86_64.tar.xz
+          tar -xf openwrt-sdk-${{ env.SDK_VERSION }}-x86-64_gcc-11.2.0_musl.Linux-x86_64.tar.xz
+          mv openwrt-sdk-${{ env.SDK_VERSION }}-x86-64_gcc-11.2.0_musl.Linux-x86_64 openwrt-sdk
+          rm openwrt-sdk-${{ env.SDK_VERSION }}-x86-64_gcc-11.2.0_musl.Linux-x86_64.tar.xz
         fi
 
     - name: Prepare package
       run: |
-        cp -r ./luci-app-connected openwrt-sdk/package/
-        cd openwrt-sdk
-        ./scripts/feeds update -a
-        ./scripts/feeds install -a
+        mkdir -p openwrt-sdk/package/luci-app-connected
+        cp -r ./* openwrt-sdk/package/luci-app-connected/
 
     - name: Build IPK
       run: |
