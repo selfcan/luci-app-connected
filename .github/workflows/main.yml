@@ -46,8 +46,14 @@ jobs:
         make defconfig
         make package/luci-app-connected/compile V=s
 
+    - name: Copy IPK to output
+      run: |
+        mkdir -p output
+        find openwrt-sdk/bin/packages -name "luci-app-connected_*.ipk" -exec cp {} output/ \;
+        ls -la output/
+
     - name: Upload IPK
       uses: actions/upload-artifact@v4
       with:
         name: luci-app-connected
-        path: openwrt-sdk/bin/packages/**/luci-app-connected_*.ipk
+        path: output/*.ipk
