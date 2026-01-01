@@ -15,6 +15,7 @@ define Package/$(PKG_NAME)
   SUBMENU:=3. Applications
   TITLE:=Connected Devices Viewer
   DEPENDS:=+luci-base
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description
