@@ -22,7 +22,7 @@ jobs:
 
     - name: Install opkg-utils
       run: |
-        git clone --depth 1 https://git.openwrt.org/project/opkg-lede.git /tmp/opkg-lede
+        git clone --depth 1 https://git.yoctoproject.org/opkg-utils /tmp/opkg-utils
 
     - name: Build IPK
       run: |
@@ -52,7 +52,7 @@ jobs:
 
         # Build using opkg-build
         mkdir -p build
-        /tmp/opkg-lede/opkg-build -o root -g root pkg build/
+        /tmp/opkg-utils/opkg-build -o root -g root pkg build/
 
         # Show result
         ls -la build/*.ipk
