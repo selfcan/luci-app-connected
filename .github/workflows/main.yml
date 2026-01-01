@@ -44,6 +44,7 @@ jobs:
         Depends: luci-base
         Section: luci
         Architecture: all
+        Maintainer: Bruno <bruno@example.com>
         Description: A LuCI application to view connected devices on OpenWrt.
         CTRLEOF
 
