@@ -16,13 +16,15 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Cache OpenWrt SDK
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: openwrt-sdk
-        key: ${{ runner.os }}-openwrt-sdk-${{ hashFiles('**/Makefile') }}
+        key: ${{ runner.os }}-openwrt-sdk-${{ env.SDK_VERSION }}-${{ hashFiles('**/Makefile') }}
+        restore-keys: |
+          ${{ runner.os }}-openwrt-sdk-${{ env.SDK_VERSION }}-
 
     - name: Set up OpenWrt SDK
       run: |
@@ -38,11 +40,6 @@ jobs:
         mkdir -p openwrt-sdk/package/luci-app-connected
         rsync -av --exclude 'openwrt-sdk' ./ openwrt-sdk/package/luci-app-connected/
 
-    - name: Validate Makefile
-      run: |
-        cd openwrt-sdk/package/luci-app-connected
-        make -n package/luci-app-connected/compile
-
     - name: Build IPK
       run: |
         cd openwrt-sdk
@@ -57,7 +54,7 @@ jobs:
     - name: Cleanup SDK
       run: |
         rm -rf openwrt-sdk/tmp
-        rm -rf openwrt-sdk/staging_dir
+        rm -rf openwrt-sdk/build_dir
 
     - name: Test Package
       run: |

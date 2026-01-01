@@ -25,14 +25,32 @@ local function ip_compare(a, b)
     return false
 end
 
--- Function to get hostname by reverse DNS
-local function get_hostname(ip)
-    local host = sys.exec("nslookup " .. ip .. " 2>/dev/null | awk -F'= ' '/name =/ {print $2}' | tr -d '\n'")
-    if host and host ~= "" then
-        return host
-    else
-        return ""
+-- Build hostname lookup table from DHCP leases and /etc/hosts
+local hostnames = {}
+
+-- Parse DHCP leases (dnsmasq format: timestamp mac ip hostname clientid)
+local leases = sys.exec("cat /tmp/dhcp.leases 2>/dev/null") or ""
+for line in leases:gmatch("[^\r\n]+") do
+    local ip, hostname = line:match("%S+%s+%S+%s+(%S+)%s+(%S+)")
+    if ip and hostname and hostname ~= "*" then
+        hostnames[ip] = hostname
     end
+end
+
+-- Parse /etc/hosts as fallback
+local hosts = sys.exec("cat /etc/hosts 2>/dev/null") or ""
+for line in hosts:gmatch("[^\r\n]+") do
+    if not line:match("^%s*#") then
+        local ip, hostname = line:match("^(%S+)%s+(%S+)")
+        if ip and hostname and not hostnames[ip] then
+            hostnames[ip] = hostname
+        end
+    end
+end
+
+-- Function to get hostname from lookup table
+local function get_hostname(ip)
+    return hostnames[ip] or ""
 end
 
 -- Parse ip neigh and group by interface

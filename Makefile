@@ -27,10 +27,10 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
-	$(INSTALL_BIN) usr/lib/lua/luci/controller/connected.lua $(1)/usr/lib/lua/luci/controller/
+	$(INSTALL_DATA) usr/lib/lua/luci/controller/connected.lua $(1)/usr/lib/lua/luci/controller/
 
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view/connected
-	$(INSTALL_BIN) usr/lib/lua/luci/view/connected/index.htm $(1)/usr/lib/lua/luci/view/connected/
+	$(INSTALL_DATA) usr/lib/lua/luci/view/connected/index.htm $(1)/usr/lib/lua/luci/view/connected/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
