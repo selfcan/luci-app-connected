@@ -20,53 +20,42 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Install opkg-utils
+      run: |
+        git clone --depth 1 https://git.openwrt.org/project/opkg-lede.git /tmp/opkg-lede
+
     - name: Build IPK
       run: |
         set -e
-        PKG_FILE="${{ env.PKG_NAME }}_${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}_all.ipk"
 
-        # Create temp directories
-        mkdir -p build/{control,data}
+        # Create package directory structure for opkg-build
+        mkdir -p pkg/CONTROL
+        mkdir -p pkg/usr/lib/lua/luci/controller
+        mkdir -p pkg/usr/lib/lua/luci/view/connected
 
-        # Copy files to data directory
-        mkdir -p build/data/usr/lib/lua/luci/controller
-        mkdir -p build/data/usr/lib/lua/luci/view/connected
-        cp usr/lib/lua/luci/controller/connected.lua build/data/usr/lib/lua/luci/controller/
-        cp usr/lib/lua/luci/view/connected/index.htm build/data/usr/lib/lua/luci/view/connected/
+        # Copy files
+        cp usr/lib/lua/luci/controller/connected.lua pkg/usr/lib/lua/luci/controller/
+        cp usr/lib/lua/luci/view/connected/index.htm pkg/usr/lib/lua/luci/view/connected/
 
         # Create control file
-        printf "Package: %s\n" "${{ env.PKG_NAME }}" > build/control/control
-        printf "Version: %s-%s\n" "${{ env.PKG_VERSION }}" "${{ env.PKG_RELEASE }}" >> build/control/control
-        printf "Depends: luci-base\n" >> build/control/control
-        printf "Section: luci\n" >> build/control/control
-        printf "Architecture: all\n" >> build/control/control
-        printf "Description: A LuCI application to view connected devices on OpenWrt.\n" >> build/control/control
+        cat > pkg/CONTROL/control << 'CTRLEOF'
+        Package: ${{ env.PKG_NAME }}
+        Version: ${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}
+        Depends: luci-base
+        Section: luci
+        Architecture: all
+        Description: A LuCI application to view connected devices on OpenWrt.
+        CTRLEOF
 
-        # Create debian-binary (must be exactly "2.0" with newline)
-        printf "2.0\n" > build/debian-binary
+        # Remove leading whitespace from control file
+        sed -i 's/^        //' pkg/CONTROL/control
 
-        # Create tarballs with proper ownership (use gzip, not xz)
-        cd build/control && tar --numeric-owner --owner=0 --group=0 -czf ../control.tar.gz . && cd ..
-        cd data && tar --numeric-owner --owner=0 --group=0 -czf ../data.tar.gz . && cd ..
+        # Build using opkg-build
+        mkdir -p build
+        /tmp/opkg-lede/opkg-build -o root -g root pkg build/
 
-        # Create IPK manually using the exact format opkg expects
-        # opkg uses a simple ar format without symbol table
-        rm -f "$PKG_FILE"
-
-        # Use POSIX ar format (no symbol table, deterministic)
-        ar -crD "$PKG_FILE" debian-binary control.tar.gz data.tar.gz
-
-        # Verify the archive
-        echo "=== IPK Contents ==="
-        ar -t "$PKG_FILE"
-        echo "=== debian-binary ==="
-        ar -p "$PKG_FILE" debian-binary | xxd
-        echo "=== Control file ==="
-        tar -tzf control.tar.gz
-        echo "=== Data files ==="
-        tar -tzf data.tar.gz
-        echo "=== File size ==="
-        ls -la "$PKG_FILE"
+        # Show result
+        ls -la build/*.ipk
 
     - name: Upload IPK
       uses: actions/upload-artifact@v4
