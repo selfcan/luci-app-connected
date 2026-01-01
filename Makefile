@@ -1,5 +1,6 @@
-include $(TOPDIR)/rules.mk
+# makefile for luci-app-connected
 
+include $(TOPDIR)/rules.mk
 PKG_NAME:=luci-app-connected
 PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
