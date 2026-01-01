@@ -27,7 +27,7 @@ jobs:
     - name: Set up OpenWrt SDK
       run: |
         if [ ! -d openwrt-sdk ]; then
-          wget https://downloads.openwrt.org/releases/${{ env.SDK_VERSION }}/targets/x86/64/openwrt-sdk-${{ env.SDK_VERSION }}-x86-64_gcc-11.2.0_musl.Linux-x86_64.tar.xz
+          wget -q https://downloads.openwrt.org/releases/${{ env.SDK_VERSION }}/targets/x86/64/openwrt-sdk-${{ env.SDK_VERSION }}-x86-64_gcc-11.2.0_musl.Linux-x86_64.tar.xz
           tar -xf openwrt-sdk-${{ env.SDK_VERSION }}-x86-64_gcc-11.2.0_musl.Linux-x86_64.tar.xz
           mv openwrt-sdk-${{ env.SDK_VERSION }}-x86-64_gcc-11.2.0_musl.Linux-x86_64 openwrt-sdk
           rm openwrt-sdk-${{ env.SDK_VERSION }}-x86-64_gcc-11.2.0_musl.Linux-x86_64.tar.xz
@@ -36,7 +36,12 @@ jobs:
     - name: Prepare package
       run: |
         mkdir -p openwrt-sdk/package/luci-app-connected
-        cp -r ./* openwrt-sdk/package/luci-app-connected/
+        rsync -av --exclude 'openwrt-sdk' ./ openwrt-sdk/package/luci-app-connected/
+
+    - name: Validate Makefile
+      run: |
+        cd openwrt-sdk/package/luci-app-connected
+        make -n package/luci-app-connected/compile
 
     - name: Build IPK
       run: |
@@ -48,3 +53,13 @@ jobs:
       with:
         name: luci-app-connected
         path: openwrt-sdk/bin/packages/**/luci-app-connected_*.ipk
+
+    - name: Cleanup SDK
+      run: |
+        rm -rf openwrt-sdk/tmp
+        rm -rf openwrt-sdk/staging_dir
+
+    - name: Test Package
+      run: |
+        echo "Testing the package on an OpenWrt device or emulator is recommended."
+        # Add commands to deploy and test the .ipk package here.
