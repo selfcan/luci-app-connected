@@ -41,7 +41,7 @@ jobs:
         make package/luci-app-connected/compile V=s
 
     - name: Upload IPK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.0
       with:
         name: luci-app-connected
         path: openwrt-sdk/bin/packages/**/luci-app-connected_*.ipk
