@@ -35,15 +35,13 @@ jobs:
 
         # Create control directory and file
         mkdir -p control
-        cat > control/control << EOF
-Package: ${{ env.PKG_NAME }}
-Version: ${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}
-Depends: luci-base
-Section: luci
-Architecture: all
-Maintainer: Bruno <bruno@example.com>
-Description: A LuCI application to view connected devices on OpenWrt.
-EOF
+        echo "Package: ${{ env.PKG_NAME }}" > control/control
+        echo "Version: ${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}" >> control/control
+        echo "Depends: luci-base" >> control/control
+        echo "Section: luci" >> control/control
+        echo "Architecture: all" >> control/control
+        echo "Maintainer: Bruno <bruno@example.com>" >> control/control
+        echo "Description: A LuCI application to view connected devices on OpenWrt." >> control/control
 
         # Create debian-binary
         echo "2.0" > debian-binary
