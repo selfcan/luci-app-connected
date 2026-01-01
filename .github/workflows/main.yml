@@ -31,27 +31,27 @@ jobs:
         cp usr/lib/lua/luci/controller/connected.lua build/data/usr/lib/lua/luci/controller/
         cp usr/lib/lua/luci/view/connected/index.htm build/data/usr/lib/lua/luci/view/connected/
 
-        # Create control file
-        cat > build/control/control << EOF
-        Package: ${{ env.PKG_NAME }}
-        Version: ${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}
-        Depends: luci-base
-        Section: luci
-        Architecture: all
-        Installed-Size: $(du -sb build/data | cut -f1)
-        Description: A LuCI application to view connected devices on OpenWrt.
-        EOF
+        # Create control file (no leading spaces)
+        cat > build/control/control << 'EOF'
+Package: ${{ env.PKG_NAME }}
+Version: ${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}
+Depends: luci-base
+Section: luci
+Architecture: all
+Description: A LuCI application to view connected devices on OpenWrt.
+EOF
 
         # Create debian-binary
         echo "2.0" > build/debian-binary
 
         # Create tarballs
-        cd build/control && tar -czf ../control.tar.gz .
-        cd ../data && tar -czf ../data.tar.gz .
-        cd ..
+        tar -czf build/control.tar.gz -C build/control .
+        tar -czf build/data.tar.gz -C build/data .
 
-        # Create IPK
+        # Create IPK (must be in build dir for ar to work correctly)
+        cd build
         ar r ${{ env.PKG_NAME }}_${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}_all.ipk debian-binary control.tar.gz data.tar.gz
+        ls -la *.ipk
 
     - name: Upload IPK
       uses: actions/upload-artifact@v4
