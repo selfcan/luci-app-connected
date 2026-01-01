@@ -42,13 +42,21 @@ jobs:
         # Create debian-binary
         echo "2.0" > build/debian-binary
 
-        # Create tarballs
-        tar -czf build/control.tar.gz -C build/control .
-        tar -czf build/data.tar.gz -C build/data .
+        # Create tarballs with proper ownership
+        tar --numeric-owner --owner=0 --group=0 -czf build/control.tar.gz -C build/control .
+        tar --numeric-owner --owner=0 --group=0 -czf build/data.tar.gz -C build/data .
 
-        # Create IPK (must be in build dir for ar to work correctly)
+        # Create IPK using correct ar format
         cd build
-        ar r ${{ env.PKG_NAME }}_${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}_all.ipk debian-binary control.tar.gz data.tar.gz
+        ar q ${{ env.PKG_NAME }}_${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}_all.ipk debian-binary control.tar.gz data.tar.gz
+
+        # Verify the archive
+        echo "=== IPK Contents ==="
+        ar -t ${{ env.PKG_NAME }}_${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}_all.ipk
+        echo "=== Control file ==="
+        tar -tzf control.tar.gz
+        echo "=== Data files ==="
+        tar -tzf data.tar.gz
         ls -la *.ipk
 
     - name: Upload IPK
