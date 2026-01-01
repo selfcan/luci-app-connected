@@ -31,15 +31,13 @@ jobs:
         cp usr/lib/lua/luci/controller/connected.lua build/data/usr/lib/lua/luci/controller/
         cp usr/lib/lua/luci/view/connected/index.htm build/data/usr/lib/lua/luci/view/connected/
 
-        # Create control file (no leading spaces)
-        cat > build/control/control << 'EOF'
-Package: ${{ env.PKG_NAME }}
-Version: ${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}
-Depends: luci-base
-Section: luci
-Architecture: all
-Description: A LuCI application to view connected devices on OpenWrt.
-EOF
+        # Create control file
+        echo "Package: ${{ env.PKG_NAME }}" > build/control/control
+        echo "Version: ${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}" >> build/control/control
+        echo "Depends: luci-base" >> build/control/control
+        echo "Section: luci" >> build/control/control
+        echo "Architecture: all" >> build/control/control
+        echo "Description: A LuCI application to view connected devices on OpenWrt." >> build/control/control
 
         # Create debian-binary
         echo "2.0" > build/debian-binary
