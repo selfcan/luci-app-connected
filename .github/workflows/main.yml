@@ -20,43 +20,52 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install opkg-utils
-      run: |
-        git clone --depth 1 https://git.yoctoproject.org/opkg-utils /tmp/opkg-utils
-
     - name: Build IPK
       run: |
-        set -e
+        set -ex
+        PKG_FILE="${{ env.PKG_NAME }}_${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}_all.ipk"
 
-        # Create package directory structure for opkg-build
-        mkdir -p pkg/CONTROL
-        mkdir -p pkg/usr/lib/lua/luci/controller
-        mkdir -p pkg/usr/lib/lua/luci/view/connected
+        # Create data directory structure
+        mkdir -p data/usr/lib/lua/luci/controller
+        mkdir -p data/usr/lib/lua/luci/view/connected
 
         # Copy files
-        cp usr/lib/lua/luci/controller/connected.lua pkg/usr/lib/lua/luci/controller/
-        cp usr/lib/lua/luci/view/connected/index.htm pkg/usr/lib/lua/luci/view/connected/
+        cp usr/lib/lua/luci/controller/connected.lua data/usr/lib/lua/luci/controller/
+        cp usr/lib/lua/luci/view/connected/index.htm data/usr/lib/lua/luci/view/connected/
 
-        # Create control file
-        cat > pkg/CONTROL/control << 'CTRLEOF'
-        Package: ${{ env.PKG_NAME }}
-        Version: ${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}
-        Depends: luci-base
-        Section: luci
-        Architecture: all
-        Maintainer: Bruno <bruno@example.com>
-        Description: A LuCI application to view connected devices on OpenWrt.
-        CTRLEOF
+        # Create control directory and file
+        mkdir -p control
+        cat > control/control << EOF
+Package: ${{ env.PKG_NAME }}
+Version: ${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}
+Depends: luci-base
+Section: luci
+Architecture: all
+Maintainer: Bruno <bruno@example.com>
+Description: A LuCI application to view connected devices on OpenWrt.
+EOF
 
-        # Remove leading whitespace from control file
-        sed -i 's/^        //' pkg/CONTROL/control
+        # Create debian-binary
+        echo "2.0" > debian-binary
 
-        # Build using opkg-build
+        # Create tarballs (fakeroot for proper ownership)
+        fakeroot tar -czvf control.tar.gz -C control .
+        fakeroot tar -czvf data.tar.gz -C data .
+
+        # Use GNU ar but with minimal/BSD-compatible format
+        # The key is the order: debian-binary MUST be first
+        rm -f "$PKG_FILE"
+        ar rcsD "$PKG_FILE" debian-binary control.tar.gz data.tar.gz
+
+        # Show what we built
         mkdir -p build
-        /tmp/opkg-utils/opkg-build -o root -g root pkg build/
-
-        # Show result
-        ls -la build/*.ipk
+        mv "$PKG_FILE" build/
+        echo "=== Built package ==="
+        ls -la build/"$PKG_FILE"
+        echo "=== AR contents ==="
+        ar -tv build/"$PKG_FILE"
+        echo "=== Hex dump of first 200 bytes ==="
+        xxd build/"$PKG_FILE" | head -15
 
     - name: Upload IPK
       uses: actions/upload-artifact@v4
